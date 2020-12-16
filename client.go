@@ -1,12 +1,18 @@
 package scrumwise
 
-import "fmt"
-
-const (
-	baseURL    string = "https://api.scrumwise.com/service/api"
-	apiVersion string = "v1"
+import (
+	"fmt"
+	"strings"
 )
 
-func endpoint(resource string) string {
-	return fmt.Sprintf("$s/$s/$s", baseURL, apiVersion, resource)
+var (
+	BaseURL    string = "https://api.scrumwise.com/service/api"
+	ApiVersion string = "v1"
+)
+
+func Endpoint(method string) string {
+	return fmt.Sprintf("%s/%s/%s",
+		strings.TrimRight(BaseURL, "/"),
+		strings.Trim(ApiVersion, "/"),
+		strings.TrimLeft(method, "/"))
 }
