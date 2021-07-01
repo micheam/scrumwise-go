@@ -11,23 +11,37 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"golang.org/x/time/rate"
 )
 
-var defaultProps = []string{
-	"Project.backlogItems",
-	"Project.sprints",
-	"Project.boards",
-	// "Project.backlogs",
-	"BacklogItem.tasks",
-}
+var (
+	// By regulation, we MUST NOT call get-data more often than once per minute.
+	// https://www.scrumwise.com/api.html#limits
+	limiter = rate.NewLimiter(rate.Every(time.Minute), 1)
+
+	defaultProps = []string{
+		"Project.backlogs",
+		"Project.backlogItems",
+		// "Project.sprints",
+		// "Project.boards",
+		// "BacklogItem.tasks",
+	}
+)
 
 type GetDataParam struct {
 	ProjectIDs []string
-	Properties []string // TODO(micheam): Represent selectable value as an enum.
+	Properties []string // TODO(micheam): represent selectable value
 }
 
-func NewGetDataParam(id string) *GetDataParam {
-	return &GetDataParam{[]string{id}, defaultProps}
+func NewGetDataParam(ids ...string) *GetDataParam {
+	return &GetDataParam{ids, defaultProps}
+}
+
+// https://www.scrumwise.com/api.html#optional-properties
+func (param *GetDataParam) AppendProps(p ...string) {
+	param.Properties = append(param.Properties, p...)
 }
 
 // joinedProjectIDs will return project ids joined with comma.
@@ -56,8 +70,8 @@ func (param *GetDataParam) asBody() io.Reader {
 }
 
 type GetDataResult struct {
-	DataVersion int64 `json:"dataVersion"`
-	Result      Data  `json:"result"`
+	DataVersion DataVersion `json:"dataVersion"`
+	Data        *Data       `json:"result"`
 }
 
 func GetData(ctx context.Context, param GetDataParam) (*GetDataResult, error) {
@@ -76,6 +90,8 @@ func GetData(ctx context.Context, param GetDataParam) (*GetDataResult, error) {
 		os.Getenv("SCRUMWISE_APIKEY"),
 	)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	limiter.Wait(ctx) // Block untile allow
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -100,12 +116,12 @@ func GetData(ctx context.Context, param GetDataParam) (*GetDataResult, error) {
 // GetDataVersion return current data version.
 //
 // https://www.scrumwise.com/api.html#getting-data
-func GetDataVersion(_ context.Context) (int64, error) {
+func GetDataVersion(ctx context.Context) (int64, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	req, err := http.NewRequest("POST", Endpoint("getDataVersion"), nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", Endpoint("getDataVersion"), nil)
 	if err != nil {
 		return -1, fmt.Errorf("failed to generate http Request: %w", err)
 	}

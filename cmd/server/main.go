@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
-	"github.com/micheam/wiseman"
+	"github.com/micheam/wiseman/cache"
+	"github.com/micheam/wiseman/scrumwise"
 )
 
 var (
@@ -28,9 +30,19 @@ func main() {
 		cancel()
 	}()
 
-	// Server start
-	err := wiseman.Work(ctx)
-	if err != nil {
-		log.Fatal(err)
+	chache := &cache.DataGateway{
+		Interval:       time.Duration(*interval) * time.Second,
+		GetDataVersion: scrumwise.GetDataVersion,
+		GetData: func(ctx context.Context) (*scrumwise.Data, scrumwise.DataVersion, error) {
+			param := scrumwise.NewGetDataParam("196595-12667-68")
+			r, err := scrumwise.GetData(ctx, *param)
+			if err != nil {
+				return nil, 0, err
+			}
+			return r.Data, r.DataVersion, nil
+		},
 	}
+	chache.StartTick(ctx)
+
+	<-ctx.Done()
 }

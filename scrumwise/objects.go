@@ -8,6 +8,8 @@ package scrumwise
 // 	Result      interface{} `json:"result"`
 // }
 
+type DataVersion = int64
+
 // Data is an object that is returned as the result of the getData method.
 //
 // https://www.scrumwise.com/api.html#data-object

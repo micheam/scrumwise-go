@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/micheam/wiseman/scrumwise"
 	"github.com/urfave/cli/v2"
@@ -27,6 +28,10 @@ func main() {
 	app.Version = version
 	app.Authors = authors
 	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:  "props",
+			Value: "",
+		},
 		&cli.BoolFlag{
 			Name:  "data-version",
 			Value: false,
@@ -47,6 +52,12 @@ func main() {
 		}
 		projectID := c.Args().First()
 		param := scrumwise.NewGetDataParam(projectID)
+
+		if c.String("props") != "" {
+			ss := strings.Split(c.String("props"), ",")
+			param.AppendProps(ss...)
+		}
+
 		data, err := scrumwise.GetData(c.Context, *param)
 		if err != nil {
 			return err
