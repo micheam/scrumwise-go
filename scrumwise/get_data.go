@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,9 +21,9 @@ var (
 	limiter = rate.NewLimiter(rate.Every(time.Minute), 1)
 
 	defaultProps = []string{
-		"Project.backlogs",
-		"Project.backlogItems",
-		// "Project.sprints",
+		//"Project.backlogs",
+		//"Project.backlogItems",
+		//"Project.sprints",
 		// "Project.boards",
 		// "BacklogItem.tasks",
 	}
@@ -139,7 +138,8 @@ func GetDataVersion(ctx context.Context) (int64, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusMultipleChoices {
-		return -1, errors.New(resp.Status)
+		b, _ := io.ReadAll(resp.Body)
+		return -1, fmt.Errorf("%s: %s", resp.Status, string(b))
 	}
 
 	result := new(struct {

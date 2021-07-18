@@ -33,7 +33,6 @@ func main() {
 	app.Commands = []*cli.Command{
 		command.GetData,
 		command.DataVersion,
-		command.Serve,
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)

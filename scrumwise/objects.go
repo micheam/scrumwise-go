@@ -14,9 +14,9 @@ type DataVersion = int64
 //
 // https://www.scrumwise.com/api.html#data-object
 type Data struct {
-	Persons        *[]Person `json:"persons"`
-	DeletedPersons *[]Person `json:"deletedPersons"`
-	Projects       []Project `json:"projects"`
+	Persons        []*Person  `json:"persons"`
+	DeletedPersons []*Person  `json:"deletedPersons"`
+	Projects       []*Project `json:"projects"`
 }
 
 // Person is a person.
